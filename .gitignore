@@ -1,0 +1,28 @@
+# dependencies
+node_modules/
+
+# workbuddy local project memory
+.workbuddy/
+
+# build output
+frontend/dist/
+
+# env
+.env
+.env.local
+*.env
+
+# go
+backend/certpilot-backend
+backend/server
+*.exe
+
+# editor / os
+.DS_Store
+.idea/
+.vscode/
+*.log
+
+# local data
+*.pem
+*.key
