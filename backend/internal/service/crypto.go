@@ -14,6 +14,12 @@ import (
 
 var ErrBadKey = errors.New("master key must be 64 hex chars (32 bytes)")
 
+// MasterKeyOK 校验主密钥是否可用（64 位 hex = 32 字节）
+func MasterKeyOK(masterKeyHex string) bool {
+	_, err := parseKey(masterKeyHex)
+	return err == nil
+}
+
 func parseKey(masterKeyHex string) ([]byte, error) {
 	key, err := hex.DecodeString(masterKeyHex)
 	if err != nil || len(key) != 32 {

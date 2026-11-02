@@ -40,8 +40,10 @@ type Certificate struct {
 	Fingerprint string         `gorm:"size:128;index" json:"fingerprint"` // SHA-256，用于识别是否轮换
 	PrivateKey  string         `gorm:"type:text" json:"-"`                // AES-GCM 加密存储
 	ChainPEM    string         `gorm:"type:mediumtext" json:"-"`          // 证书链（含叶子）
-	Source      string         `gorm:"size:32;default:upload" json:"source"` // upload / acme
-	AutoRenew   bool           `gorm:"default:false" json:"auto_renew"`   // V1.5 起生效
+	Source      string         `gorm:"size:32;default:upload" json:"source"` // upload / acme / monitor
+	AutoRenew   bool           `gorm:"default:false" json:"auto_renew"`      // V1.5 起生效
+	// 已发送提醒的最高阈值（水位）。剩余天数 <= 某阈值且水位低于该阈值时发送，避免漏跑/重启导致重复或遗漏
+	NotifiedLevel int          `gorm:"default:0" json:"notified_level"`
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`

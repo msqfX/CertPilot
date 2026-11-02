@@ -24,6 +24,9 @@ type Config struct {
 
 	// 到期提醒阈值（天），逗号分隔
 	ExpiryRemindDays []int
+
+	// 是否开放注册（CERTPILOT_ALLOW_REGISTER，默认 true）
+	AllowRegister bool
 }
 
 func getEnv(key, def string) string {
@@ -53,5 +56,6 @@ func Load() *Config {
 		c.SMTPPort = 465
 	}
 	c.ExpiryRemindDays = []int{30, 15, 7, 3}
+	c.AllowRegister = getEnv("CERTPILOT_ALLOW_REGISTER", "true") == "true"
 	return c
 }

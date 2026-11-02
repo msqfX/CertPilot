@@ -58,6 +58,12 @@ func (h *CertificateHandler) Upload(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	if !service.MasterKeyOK(h.Cfg.MasterKey) {
+		c.JSON(http.StatusPreconditionFailed, gin.H{
+			"error": "服务端未配置 CERTPILOT_MASTER_KEY（64 位 hex，可用 openssl rand -hex 32 生成），无法安全存储私钥。请在 backend/.env 中配置后重启服务。",
+		})
+		return
+	}
 	keyEnc, err := service.Encrypt(h.Cfg.MasterKey, key)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -107,7 +113,7 @@ func (h *CertificateHandler) Download(c *gin.Context) {
 		}
 		plain, err := service.Decrypt(h.Cfg.MasterKey, ct.PrivateKey)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "私钥解密失败，请检查服务端 CERTPILOT_MASTER_KEY 是否与加密时一致"})
 			return
 		}
 		body, filename = plain, ct.CommonName+".key"

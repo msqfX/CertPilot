@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { api, type Certificate } from '@/api'
+import { useUiStore } from '@/stores/ui'
+
+const ui = useUiStore()
 
 const certs = ref<Certificate[]>([])
 const showUpload = ref(false)
@@ -21,6 +24,7 @@ async function upload() {
     showUpload.value = false
     certName.value = ''
     pemText.value = ''
+    ui.success('证书上传成功')
     await load()
   } catch (e: any) {
     error.value = e.response?.data?.error || '上传失败'
@@ -40,8 +44,10 @@ async function download(c: Certificate, type: 'pem' | 'key') {
 }
 
 async function remove(c: Certificate) {
-  if (!confirm(`确定删除证书 ${c.common_name}？`)) return
+  const ok = await ui.confirm('删除证书', `确定删除证书 ${c.common_name}？已部署到服务器的证书文件不受影响。`)
+  if (!ok) return
   await api.deleteCert(c.id)
+  ui.success('证书已删除')
   await load()
 }
 

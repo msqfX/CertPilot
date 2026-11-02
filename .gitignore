@@ -16,6 +16,7 @@ frontend/dist/
 # go
 backend/certpilot-backend
 backend/server
+backend/web/
 *.exe
 
 # editor / os

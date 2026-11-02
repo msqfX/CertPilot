@@ -6,11 +6,38 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-certpilot_dev}
       MYSQL_DATABASE: certpilot
-    ports:
-      - "3306:3306"
     volumes:
       - certpilot_mysql_data:/var/lib/mysql
+    # 仅绑定本机回环，供本地开发调试；生产走容器内网即可
+    ports:
+      - "127.0.0.1:3306:3306"
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-certpilot_dev}"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  backend:
+    build: .
+    container_name: certpilot-backend
+    restart: unless-stopped
+    environment:
+      CERTPILOT_PORT: "8080"
+      CERTPILOT_DB_DSN: root:${MYSQL_ROOT_PASSWORD:-certpilot_dev}@tcp(mysql:3306)/certpilot?charset=utf8mb4&parseTime=True&loc=Local
+      CERTPILOT_JWT_SECRET: ${CERTPILOT_JWT_SECRET:-dev-only-secret-change-me}
+      CERTPILOT_MASTER_KEY: ${CERTPILOT_MASTER_KEY:-}
+      CERTPILOT_ALLOW_REGISTER: ${CERTPILOT_ALLOW_REGISTER:-true}
+      CERTPILOT_SMTP_HOST: ${CERTPILOT_SMTP_HOST:-}
+      CERTPILOT_SMTP_PORT: ${CERTPILOT_SMTP_PORT:-465}
+      CERTPILOT_SMTP_USER: ${CERTPILOT_SMTP_USER:-}
+      CERTPILOT_SMTP_PASSWORD: ${CERTPILOT_SMTP_PASSWORD:-}
+      CERTPILOT_SMTP_FROM: ${CERTPILOT_SMTP_FROM:-}
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
 
 volumes:
   certpilot_mysql_data:

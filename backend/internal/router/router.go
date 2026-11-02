@@ -1,6 +1,11 @@
 package router
 
 import (
+	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
@@ -11,6 +16,7 @@ import (
 
 func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	r := gin.Default()
+	_ = r.SetTrustedProxies(nil)
 	r.Use(middleware.CORS())
 	middleware.JWTSecret = []byte(cfg.JWTSecret)
 
@@ -53,5 +59,29 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 			authed.GET("/operation-logs", logs.List)
 		}
 	}
+
+	serveFrontend(r)
 	return r
+}
+
+// serveFrontend 托管前端构建产物（web/dist），SPA 路由回退到 index.html。
+// 目录不存在时跳过（纯 API 模式 / 前后端分离部署）。
+func serveFrontend(r *gin.Engine) {
+	dist := "./web/dist"
+	if _, err := os.Stat(dist); err != nil {
+		return
+	}
+	r.NoRoute(func(c *gin.Context) {
+		p := c.Request.URL.Path
+		if strings.HasPrefix(p, "/api/") {
+			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+			return
+		}
+		full := filepath.Join(dist, filepath.Clean("/"+p))
+		if st, err := os.Stat(full); err == nil && !st.IsDir() {
+			c.File(full)
+			return
+		}
+		c.File(filepath.Join(dist, "index.html"))
+	})
 }

@@ -86,7 +86,9 @@ func (h *NotificationHandler) CreateChannel(c *gin.Context) {
 	}
 	enc, err := service.Encrypt(h.Cfg.MasterKey, string(req.Config))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusPreconditionFailed, gin.H{
+			"error": "服务端未配置 CERTPILOT_MASTER_KEY（64 位 hex，可用 openssl rand -hex 32 生成），无法安全存储渠道凭证。请在 backend/.env 中配置后重启服务。",
+		})
 		return
 	}
 	ch := model.NotificationChannel{UserID: uid, Type: req.Type, Name: req.Name, ConfigEnc: enc, Enabled: true}
@@ -117,7 +119,7 @@ func (h *NotificationHandler) TestChannel(c *gin.Context) {
 	}
 	decrypted, err := service.Decrypt(h.Cfg.MasterKey, ch.ConfigEnc)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "渠道凭证解密失败，请检查服务端 CERTPILOT_MASTER_KEY 是否与加密时一致"})
 		return
 	}
 	title := "[CertPilot] 测试通知"

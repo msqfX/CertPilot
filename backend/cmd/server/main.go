@@ -12,6 +12,13 @@ import (
 func main() {
 	cfg := config.Load()
 
+	if cfg.MasterKey == "" {
+		log.Println("[warn] CERTPILOT_MASTER_KEY 未配置：证书上传与通知渠道功能不可用，生成方式见 backend/.env.example")
+	}
+	if !cfg.AllowRegister {
+		log.Println("[info] 注册已关闭（CERTPILOT_ALLOW_REGISTER=false）")
+	}
+
 	db, err := database.Open(cfg.DBDSN)
 	if err != nil {
 		log.Fatalf("connect db: %v", err)

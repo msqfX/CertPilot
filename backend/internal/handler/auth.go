@@ -19,6 +19,10 @@ type AuthHandler struct {
 }
 
 func (h *AuthHandler) Register(c *gin.Context) {
+	if !h.Cfg.AllowRegister {
+		c.JSON(http.StatusForbidden, gin.H{"error": "注册已关闭，请联系管理员"})
+		return
+	}
 	var req struct {
 		Email    string `json:"email" binding:"required,email"`
 		Password string `json:"password" binding:"required,min=8"`

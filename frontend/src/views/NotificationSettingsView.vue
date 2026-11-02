@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { api, type Channel, type NotificationLog } from '@/api'
+import { useUiStore } from '@/stores/ui'
+
+const ui = useUiStore()
 
 const channels = ref<Channel[]>([])
 const logs = ref<NotificationLog[]>([])
@@ -37,16 +40,18 @@ async function add() {
 async function test(ch: Channel) {
   try {
     await api.testChannel(ch.id)
-    alert('测试通知已发送，请查收')
+    ui.success('测试通知已发送，请查收')
   } catch (e: any) {
-    alert('发送失败：' + (e.response?.data?.error || e.message))
+    ui.error('发送失败：' + (e.response?.data?.error || e.message))
   }
   await load()
 }
 
 async function remove(ch: Channel) {
-  if (!confirm(`确定删除渠道 ${ch.name || ch.type}？`)) return
+  const ok = await ui.confirm('删除通知渠道', `确定删除渠道「${ch.name || typeLabel[ch.type]}」？删除后将不再向它发送到期提醒。`)
+  if (!ok) return
   await api.deleteChannel(ch.id)
+  ui.success('渠道已删除')
   await load()
 }
 

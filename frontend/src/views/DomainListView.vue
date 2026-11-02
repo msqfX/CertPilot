@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { api, type Domain } from '@/api'
+import { useUiStore } from '@/stores/ui'
+
+const ui = useUiStore()
 
 const domains = ref<Domain[]>([])
 const loading = ref(false)
@@ -28,6 +31,7 @@ async function add() {
     showAdd.value = false
     newName.value = ''
     newRemark.value = ''
+    ui.success('域名已添加')
     await load()
   } catch (e: any) {
     error.value = e.response?.data?.error || '添加失败'
@@ -41,7 +45,7 @@ async function batch() {
     showBatch.value = false
     batchNames.value = ''
     await load()
-    alert(`导入完成：新增 ${res.data.created} 个，跳过 ${res.data.skipped} 个`)
+    ui.success(`导入完成：新增 ${res.data.created} 个，跳过 ${res.data.skipped} 个`)
   } catch (e: any) {
     error.value = e.response?.data?.error || '导入失败'
   }
@@ -53,16 +57,18 @@ async function check(d: Domain) {
     const res = await api.checkDomain(d.id)
     await load()
     const c = res.data.cert
-    alert(`检测成功：${c.issuer} 颁发，${c.days_left} 天后过期`)
+    ui.success(`检测成功：${c.issuer} 颁发，${c.days_left} 天后过期`)
   } catch (e: any) {
-    alert('检测失败：' + (e.response?.data?.error || e.message))
+    ui.error('检测失败：' + (e.response?.data?.error || e.message))
     await load()
   }
 }
 
 async function remove(d: Domain) {
-  if (!confirm(`确定删除域名 ${d.name}？`)) return
+  const ok = await ui.confirm('删除域名', `确定删除域名 ${d.name}？删除后可重新添加，不影响已录入的证书。`)
+  if (!ok) return
   await api.deleteDomain(d.id)
+  ui.success(`已删除 ${d.name}`)
   await load()
 }
 
