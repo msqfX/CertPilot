@@ -15,14 +15,14 @@ const groups = [
     items: [
       { label: '域名列表', to: '/domains', icon: '🌐' },
       { label: 'SSL 证书', to: '/certificates', icon: '🔒' },
-      { label: '申请证书', to: '', icon: '📝', soon: 'V1.5' },
+      { label: '申请证书', to: '/apply', icon: '📝' },
     ],
   },
   {
     title: '自动化',
     items: [
-      { label: '自动续期', to: '', icon: '🔄', soon: 'V1.5' },
-      { label: 'DNS 服务商', to: '', icon: '☁️', soon: 'V1.5' },
+      { label: '自动续期', to: '', icon: '🔄', soon: '随 V1.5 调度' },
+      { label: 'DNS 服务商', to: '/dns', icon: '☁️' },
       { label: '部署管理', to: '', icon: '🚀', soon: 'V2.0' },
     ],
   },

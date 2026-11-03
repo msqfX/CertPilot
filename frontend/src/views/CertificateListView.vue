@@ -5,6 +5,16 @@ import { useUiStore } from '@/stores/ui'
 
 const ui = useUiStore()
 
+async function toggleRenew(c: Certificate) {
+  try {
+    const res = await api.updateCert(c.id, { auto_renew: !c.auto_renew })
+    c.auto_renew = res.data.auto_renew
+    ui.success(c.auto_renew ? '已开启自动续期' : '已关闭自动续期')
+  } catch (e: any) {
+    ui.error(e.response?.data?.error || '操作失败')
+  }
+}
+
 const certs = ref<Certificate[]>([])
 const showUpload = ref(false)
 const certName = ref('')
@@ -124,6 +134,16 @@ onMounted(load)
               >
                 {{ c.expired ? `已过期 ${-c.days_left} 天` : `剩 ${c.days_left} 天` }}
               </span>
+              <button
+                v-if="c.source === 'acme'"
+                class="ml-2 inline-flex items-center gap-1 text-xs rounded-full px-2 py-0.5 border transition-colors"
+                :class="c.auto_renew ? 'border-emerald-200 bg-emerald-50 text-emerald-600' : 'border-gray-200 text-gray-400 hover:border-gray-300'"
+                :title="c.auto_renew ? '剩余 30 天内自动续期' : '开启自动续期'"
+                @click="toggleRenew(c)"
+              >
+                <span class="w-1.5 h-1.5 rounded-full" :class="c.auto_renew ? 'bg-emerald-500' : 'bg-gray-300'"></span>
+                自动续期
+              </button>
             </td>
             <td class="px-5 py-3 text-right space-x-2 whitespace-nowrap">
               <button class="text-sky-600 hover:underline" @click="download(c, 'pem')">PEM</button>

@@ -18,6 +18,8 @@ const router = createRouter({
         { path: 'dashboard', name: 'dashboard', component: () => import('@/views/DashboardView.vue') },
         { path: 'domains', name: 'domains', component: () => import('@/views/DomainListView.vue') },
         { path: 'certificates', name: 'certificates', component: () => import('@/views/CertificateListView.vue') },
+        { path: 'apply', name: 'apply', component: () => import('@/views/ApplyCertView.vue') },
+        { path: 'dns', name: 'dns', component: () => import('@/views/DnsProvidersView.vue') },
         { path: 'notifications', name: 'notifications', component: () => import('@/views/NotificationSettingsView.vue') },
         { path: 'logs', name: 'logs', component: () => import('@/views/OperationLogView.vue') },
       ],

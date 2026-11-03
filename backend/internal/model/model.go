@@ -44,6 +44,8 @@ type Certificate struct {
 	AutoRenew   bool           `gorm:"default:false" json:"auto_renew"`      // V1.5 起生效
 	// 已发送提醒的最高阈值（水位）。剩余天数 <= 某阈值且水位低于该阈值时发送，避免漏跑/重启导致重复或遗漏
 	NotifiedLevel int          `gorm:"default:0" json:"notified_level"`
+	// 签发该证书的订单（source=acme 时用于自动续期定位签发参数）
+	OrderID *uint `gorm:"index" json:"order_id"`
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`

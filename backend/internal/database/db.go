@@ -23,6 +23,9 @@ func Open(dsn string) (*gorm.DB, error) {
 		&model.NotificationChannel{},
 		&model.NotificationLog{},
 		&model.OperationLog{},
+		&model.AcmeAccount{},
+		&model.DNSProvider{},
+		&model.CertificateOrder{},
 	); err != nil {
 		return nil, err
 	}

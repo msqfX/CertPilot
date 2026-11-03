@@ -28,10 +28,12 @@ func main() {
 		Host: cfg.SMTPHost, Port: cfg.SMTPPort,
 		User: cfg.SMTPUser, Password: cfg.SMTPPassword, From: cfg.SMTPFrom,
 	}
-	scheduler := &service.Scheduler{DB: db, Cfg: cfg, Mailer: mailer}
+	notifier := &service.Notifier{DB: db, Cfg: cfg, Mailer: mailer}
+	acmEngine := &service.ACMEngine{DB: db, Cfg: cfg, Notifier: notifier}
+	scheduler := &service.Scheduler{DB: db, Cfg: cfg, Mailer: mailer, ACM: acmEngine}
 	scheduler.Start()
 
-	r := router.Setup(db, cfg)
+	r := router.Setup(db, cfg, acmEngine)
 	log.Printf("[server] CertPilot API listening on :%s", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {
 		log.Fatal(err)

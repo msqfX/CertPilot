@@ -10,11 +10,12 @@ import (
 	"gorm.io/gorm"
 )
 
-// Scheduler 到期巡检：每天 09:00 扫描所有域名/证书，按阈值发送提醒。
+// Scheduler 到期巡检：每天 09:00 扫描所有域名/证书，按阈值发送提醒，并触发自动续期。
 type Scheduler struct {
 	DB     *gorm.DB
 	Cfg    *config.Config
 	Mailer *Mailer
+	ACM    *ACMEngine // 可选：自动续期引擎
 }
 
 func (s *Scheduler) Start() {
@@ -27,6 +28,9 @@ func (s *Scheduler) Start() {
 			}
 			time.Sleep(next.Sub(now))
 			s.Run()
+			if s.ACM != nil {
+				s.ACM.RunRenewals()
+			}
 		}
 	}()
 	log.Println("[scheduler] expiry check scheduled daily at 09:00")
@@ -121,34 +125,5 @@ func (s *Scheduler) notifyExpiry(userID uint, cert *model.Certificate, left int)
 
 // deliver 向用户所有启用的渠道发送通知并落日志
 func (s *Scheduler) deliver(userID uint, certID *uint, typ, title, content string) {
-	var channels []model.NotificationChannel
-	s.DB.Where("user_id = ? AND enabled = ?", userID, true).Find(&channels)
-	for _, ch := range channels {
-		status, errMsg := "ok", ""
-		cfg := s.decodedConfig(ch.ConfigEnc)
-		if ch.Type == "email" {
-			m := *s.Mailer
-			if cfg.To != "" {
-				if err := m.Send(SplitCSV(cfg.To), title, content); err != nil {
-					status, errMsg = "fail", err.Error()
-				}
-			}
-		} else {
-			if err := SendToChannel(ch.Type, cfg, title, content); err != nil {
-				status, errMsg = "fail", err.Error()
-			}
-		}
-		s.DB.Create(&model.NotificationLog{
-			UserID: userID, ChannelID: ch.ID, CertID: certID,
-			Type: typ, Title: title, Content: content, Status: status, Error: errMsg,
-		})
-	}
-}
-
-func (s *Scheduler) decodedConfig(enc string) ChannelConfig {
-	var cfg ChannelConfig
-	if plain, err := Decrypt(s.Cfg.MasterKey, enc); err == nil {
-		_ = jsonUnmarshal(plain, &cfg)
-	}
-	return cfg
+	(&Notifier{DB: s.DB, Cfg: s.Cfg, Mailer: s.Mailer}).Notify(userID, certID, typ, title, content)
 }

@@ -12,9 +12,10 @@ import (
 	"github.com/msqfX/CertPilot/backend/internal/config"
 	"github.com/msqfX/CertPilot/backend/internal/handler"
 	"github.com/msqfX/CertPilot/backend/internal/middleware"
+	"github.com/msqfX/CertPilot/backend/internal/service"
 )
 
-func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
+func Setup(db *gorm.DB, cfg *config.Config, acmeEngine *service.ACMEngine) *gin.Engine {
 	r := gin.Default()
 	_ = r.SetTrustedProxies(nil)
 	r.Use(middleware.CORS())
@@ -26,6 +27,7 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 	dash := &handler.DashboardHandler{DB: db}
 	notif := &handler.NotificationHandler{DB: db, Cfg: cfg}
 	logs := &handler.LogHandler{DB: db}
+	acme := &handler.ACMEHandler{DB: db, Cfg: cfg, Engine: acmeEngine}
 
 	api := r.Group("/api/v1")
 	{
@@ -44,8 +46,19 @@ func Setup(db *gorm.DB, cfg *config.Config) *gin.Engine {
 
 			authed.GET("/certificates", certs.List)
 			authed.POST("/certificates", certs.Upload)
+			authed.PATCH("/certificates/:id", certs.Update)
 			authed.GET("/certificates/:id/download", certs.Download)
 			authed.DELETE("/certificates/:id", certs.Delete)
+
+			authed.GET("/acme/accounts", acme.ListAccounts)
+			authed.POST("/acme/accounts", acme.CreateAccount)
+
+			authed.GET("/dns-providers", acme.ListProviders)
+			authed.POST("/dns-providers", acme.CreateProvider)
+			authed.DELETE("/dns-providers/:id", acme.DeleteProvider)
+
+			authed.GET("/certificates/orders", acme.ListOrders)
+			authed.POST("/certificates/orders", acme.CreateOrder)
 
 			authed.GET("/dashboard/stats", dash.Stats)
 			authed.GET("/dashboard/upcoming", dash.Upcoming)

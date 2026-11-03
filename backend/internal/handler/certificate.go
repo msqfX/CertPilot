@@ -124,6 +124,30 @@ func (h *CertificateHandler) Download(c *gin.Context) {
 	c.Data(http.StatusOK, "application/x-pem-file", []byte(body))
 }
 
+// Update 更新证书属性（当前仅 auto_renew 开关）
+func (h *CertificateHandler) Update(c *gin.Context) {
+	uid := c.GetUint("uid")
+	var ct model.Certificate
+	if err := h.DB.Where("id = ? AND user_id = ?", c.Param("id"), uid).First(&ct).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "certificate not found"})
+		return
+	}
+	var req struct {
+		AutoRenew *bool `json:"auto_renew"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil || req.AutoRenew == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "auto_renew required"})
+		return
+	}
+	if ct.Source != "acme" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "仅 ACME 签发的证书支持自动续期"})
+		return
+	}
+	h.DB.Model(&ct).Update("auto_renew", *req.AutoRenew)
+	h.buildResp(ct)
+	c.JSON(http.StatusOK, h.buildResp(ct))
+}
+
 func (h *CertificateHandler) Delete(c *gin.Context) {
 	uid := c.GetUint("uid")
 	res := h.DB.Where("id = ? AND user_id = ?", c.Param("id"), uid).Delete(&model.Certificate{})
